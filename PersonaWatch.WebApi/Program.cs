@@ -1,4 +1,5 @@
 var builder = WebApplication.CreateBuilder(args);
+var allowedOrigin = builder.Configuration["Cors:FrontendOrigin"];
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -7,9 +8,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp", policy =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins(allowedOrigin!)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -26,7 +27,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowReactApp");
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 
