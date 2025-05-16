@@ -16,19 +16,28 @@ namespace PersonaWatch.WebApi.Controllers
             _context = context;
         }
 
-        /// <summary>
-        /// Haberleri getirir. İsteğe bağlı search parametresi ile filtreleme yapılabilir.
-        /// </summary>
         [HttpGet]
-        public async Task<IActionResult> GetNews([FromQuery] string? search)
+        public async Task<IActionResult> GetNews(
+                                                [FromQuery] string? search,
+                                                [FromQuery] DateTime? dateFrom,
+                                                [FromQuery] DateTime? dateTo)
         {
             var query = _context.NewsContents
                 .Where(n => n.RecordStatus == 'A');
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(n =>
-                    n.Title.Contains(search) || n.Summary.Contains(search));
+                query = query.Where(n => n.PersonName == search);
+            }
+
+            if (dateFrom.HasValue)
+            {
+                query = query.Where(n => n.PublishDate.Date >= dateFrom.Value.Date);
+            }
+
+            if (dateTo.HasValue)
+            {
+                query = query.Where(n => n.PublishDate.Date <= dateTo.Value.Date);
             }
 
             var newsList = await query
