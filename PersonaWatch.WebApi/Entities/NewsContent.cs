@@ -1,0 +1,16 @@
+﻿using PersonaWatch.WebApi.Entities;
+
+public class NewsContent : BaseEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+
+    public string Title { get; set; } = string.Empty;
+    public string Summary { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
+
+    public string Platform { get; set; } = string.Empty;
+    public DateTime PublishDate { get; set; }
+    public string PersonName { get; set; } = string.Empty;
+
+    public string ContentHash { get; set; } = string.Empty;
+}

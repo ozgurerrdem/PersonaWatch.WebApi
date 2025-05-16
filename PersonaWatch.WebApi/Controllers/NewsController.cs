@@ -1,0 +1,49 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using PersonaWatch.WebApi.Data;
+using System.Threading.Tasks;
+
+namespace PersonaWatch.WebApi.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class NewsController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public NewsController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        /// <summary>
+        /// Haberleri getirir. İsteğe bağlı search parametresi ile filtreleme yapılabilir.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetNews([FromQuery] string? search)
+        {
+            var query = _context.NewsContents
+                .Where(n => n.RecordStatus == 'A');
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(n =>
+                    n.Title.Contains(search) || n.Summary.Contains(search));
+            }
+
+            var newsList = await query
+                .OrderByDescending(n => n.PublishDate)
+                .Select(n => new
+                {
+                    title = n.Title,
+                    content = n.Summary,
+                    link = n.Url,
+                    platform = n.Platform,
+                    publishDate = n.PublishDate
+                })
+                .ToListAsync();
+
+            return Ok(newsList);
+        }
+    }
+}
