@@ -10,10 +10,12 @@ namespace PersonaWatch.WebApi.Controllers
     public class UserController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly TokenService _tokenService;
 
-        public UserController(AppDbContext context)
+        public UserController(AppDbContext context, TokenService tokenService)
         {
             _context = context;
+            _tokenService = tokenService;
         }
 
         [HttpPost("login")]
@@ -29,8 +31,11 @@ namespace PersonaWatch.WebApi.Controllers
             if (result == PasswordVerificationResult.Failed)
                 return Unauthorized("Şifre hatalı");
 
+            var token = _tokenService.CreateToken(user);
+
             return Ok(new
             {
+                token,
                 username = user.Username,
                 firstName = user.FirstName,
                 lastName = user.LastName,

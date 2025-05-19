@@ -1,13 +1,16 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PersonaWatch.WebApi.Data;
 using PersonaWatch.WebApi.Services.Interfaces;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var allowedOrigin = builder.Configuration["Cors:FrontendOrigin"];
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddScoped<TokenService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -29,6 +32,21 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ScanService>();
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<IScanner, SerpApiScannerService>();
+
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
 
 var app = builder.Build();
 
