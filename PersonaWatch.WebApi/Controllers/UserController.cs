@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using PersonaWatch.WebApi.Data;
 using PersonaWatch.WebApi.DTOs;
@@ -18,6 +19,7 @@ namespace PersonaWatch.WebApi.Controllers
             _tokenService = tokenService;
         }
 
+        [AllowAnonymous]
         [HttpPost("login")]
         public IActionResult Login([FromBody] UserLoginDto dto)
         {
@@ -46,6 +48,9 @@ namespace PersonaWatch.WebApi.Controllers
         [HttpGet("all")]
         public IActionResult GetAllUsers()
         {
+            if (!IsCurrentUserAdmin())
+                return Forbid();
+
             var users = _context.Users
                 .Where(u => u.RecordStatus == 'A')
                 .Select(u => new
@@ -67,9 +72,15 @@ namespace PersonaWatch.WebApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserDto dto)
         {
+            if (!IsCurrentUserAdmin())
+                return Forbid();
+
             var user = await _context.Users.FindAsync(id);
             if (user == null)
                 return NotFound();
+
+            if (user.Username.ToLower() == "admin")
+                return BadRequest("Admin kullanıcısı güncellenemez.");
 
             user.Username = dto.Username;
             user.FirstName = dto.FirstName;
@@ -83,7 +94,7 @@ namespace PersonaWatch.WebApi.Controllers
             }
 
             user.UpdatedUserName = Request.Headers["x-username"].ToString() ?? "system";
-            user.UpdatedDate = DateTime.Now;
+            user.UpdatedDate = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return Ok();
@@ -92,6 +103,9 @@ namespace PersonaWatch.WebApi.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] UpdateUserDto dto)
         {
+            if (!IsCurrentUserAdmin())
+                return Forbid();
+
             if (string.IsNullOrWhiteSpace(dto.Password))
                 return BadRequest("Şifre zorunludur.");
 
@@ -108,9 +122,9 @@ namespace PersonaWatch.WebApi.Controllers
                 IsAdmin = dto.IsAdmin,
                 Password = hasher.HashPassword(null!, dto.Password),
                 CreatedUserName = Request.Headers["x-username"].FirstOrDefault() ?? "system",
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 UpdatedUserName = Request.Headers["x-username"].FirstOrDefault() ?? "system",
-                UpdatedDate = DateTime.Now
+                UpdatedDate = DateTime.UtcNow
             };
 
             _context.Users.Add(user);
@@ -122,6 +136,9 @@ namespace PersonaWatch.WebApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> SoftDeleteUser(Guid id)
         {
+            if (!IsCurrentUserAdmin())
+                return Forbid();
+
             var user = await _context.Users.FindAsync(id);
             if (user == null)
                 return NotFound();
@@ -135,6 +152,11 @@ namespace PersonaWatch.WebApi.Controllers
 
             await _context.SaveChangesAsync();
             return Ok();
+        }
+
+        private bool IsCurrentUserAdmin()
+        {
+            return User.Claims.FirstOrDefault(c => c.Type == "isAdmin")?.Value == "true";
         }
     }
 }

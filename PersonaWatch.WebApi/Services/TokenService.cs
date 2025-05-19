@@ -16,10 +16,10 @@ public class TokenService
     {
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.Name, user.Username),
-            new Claim("FirstName", user.FirstName ?? ""),
-            new Claim("LastName", user.LastName ?? ""),
-            new Claim("IsAdmin", user.IsAdmin.ToString())
+            new(ClaimTypes.Name, user.Username),
+            new("FirstName", user.FirstName ?? ""),
+            new("LastName", user.LastName ?? ""),
+            new("isAdmin", user.IsAdmin.ToString().ToLower())
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
