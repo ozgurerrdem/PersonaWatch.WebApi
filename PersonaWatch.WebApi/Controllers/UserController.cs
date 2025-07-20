@@ -154,6 +154,13 @@ namespace PersonaWatch.WebApi.Controllers
             return Ok();
         }
 
+        [Authorize]
+        [HttpGet("validate")]
+        public IActionResult ValidateToken()
+        {
+            return Ok(true);
+        }
+
         private bool IsCurrentUserAdmin()
         {
             return User.Claims.FirstOrDefault(c => c.Type == "isAdmin")?.Value == "true";
