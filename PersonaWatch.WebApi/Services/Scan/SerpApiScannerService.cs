@@ -8,6 +8,8 @@ public class SerpApiScannerService : IScanner
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _serpApiKey;
 
+    public string Source => "SerpApi";
+
     public SerpApiScannerService(IHttpClientFactory httpClientFactory, IConfiguration configuration)
     {
         _httpClientFactory = httpClientFactory;
@@ -62,6 +64,9 @@ public class SerpApiScannerService : IScanner
                                 ? parsedDate
                                 : DateTime.UtcNow;
 
+                if (!string.IsNullOrEmpty(url) && url.Contains("youtube.com", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
                 if (string.IsNullOrEmpty(title) && string.IsNullOrEmpty(url))
                     continue;
 
@@ -80,9 +85,11 @@ public class SerpApiScannerService : IScanner
                     CreatedUserName = "system",
                     RecordStatus = 'A',
                     PersonName = personName,
-                    ContentHash = contentHash
+                    ContentHash = contentHash,
+                    Source = Source
                 });
             }
+
         }
 
         return results;

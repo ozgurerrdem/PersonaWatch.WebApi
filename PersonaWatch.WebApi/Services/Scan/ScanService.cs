@@ -1,9 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PersonaWatch.WebApi.Data;
-using PersonaWatch.WebApi.Entities;
 using PersonaWatch.WebApi.Services.Interfaces;
-using System.Security.Cryptography;
-using System.Text;
 
 public class ScanService
 {
@@ -20,7 +17,6 @@ public class ScanService
     {
         var allNewContents = new List<NewsContent>();
 
-        // Var olan ContentHash'leri HashSet ile çek (çok hızlı arar)
         var existingHashes = new HashSet<string>(
             await _context.NewsContents
                 .Where(n => n.RecordStatus == 'A')
@@ -49,5 +45,10 @@ public class ScanService
         }
 
         return allNewContents.OrderByDescending(x => x.PublishDate).ToList();
+    }
+
+    public IEnumerable<IScanner> GetScanners()
+    {
+        return _scanners;
     }
 }
