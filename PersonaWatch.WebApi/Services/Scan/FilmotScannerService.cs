@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
-using PersonaWatch.WebApi.Entities.Filmot;
+using PersonaWatch.WebApi.Entities.Services.Filmot;
 
 public class FilmotScannerService : IScanner
 {

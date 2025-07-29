@@ -1,4 +1,4 @@
-﻿namespace PersonaWatch.WebApi.Entities.Filmot
+﻿namespace PersonaWatch.WebApi.Entities.Services.Filmot
 {
     public class FilmotVideoResult
     {

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using PersonaWatch.WebApi.Data;
+using PersonaWatch.WebApi.Services;
 using PersonaWatch.WebApi.Services.Interfaces;
 using System.Text;
 
@@ -10,14 +11,14 @@ var builder = WebApplication.CreateBuilder(args);
 var allowedOrigin = builder.Configuration["Cors:FrontendOrigin"];
 
 // Add services to the container.
-builder.Services.AddControllers();
-//builder.Services.AddControllers(options =>
-//{
-//    var policy = new AuthorizationPolicyBuilder()
-//        .RequireAuthenticatedUser()
-//        .Build();
-//    //options.Filters.Add(new AuthorizeFilter(policy));
-//});
+//builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    var policy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+    //options.Filters.Add(new AuthorizeFilter(policy));
+});
 
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddEndpointsApiExplorer();
@@ -39,10 +40,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 builder.Services.AddScoped<ScanService>();
+builder.Services.AddHttpClient<ApifyService>();
 builder.Services.AddHttpClient();
-//builder.Services.AddScoped<IScanner, SerpApiScannerService>();
-//builder.Services.AddScoped<IScanner, YouTubeScannerService>();
+
+builder.Services.AddScoped<IScanner, SerpApiScannerService>();
+builder.Services.AddScoped<IScanner, YouTubeScannerService>();
 builder.Services.AddScoped<IScanner, FilmotScannerService>();
+builder.Services.AddScoped<IScanner, XApifyScannerService>();
+builder.Services.AddScoped<IScanner, InstagramApifyScannerService>();
+
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
