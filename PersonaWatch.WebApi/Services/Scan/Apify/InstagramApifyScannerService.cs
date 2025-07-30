@@ -1,5 +1,4 @@
-﻿using PersonaWatch.WebApi.DTOs.Services.Apify;
-using PersonaWatch.WebApi.Services;
+﻿using PersonaWatch.WebApi.Services;
 using PersonaWatch.WebApi.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
