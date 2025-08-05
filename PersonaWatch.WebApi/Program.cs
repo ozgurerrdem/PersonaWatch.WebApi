@@ -48,6 +48,7 @@ builder.Services.AddScoped<IScanner, SerpApiScannerService>();
 builder.Services.AddScoped<IScanner, YouTubeScannerService>();
 builder.Services.AddScoped<IScanner, FilmotScannerService>();
 builder.Services.AddScoped<IScanner, EksiScannerService>();
+builder.Services.AddScoped<IScanner, SikayetvarScannerService>();
 
 //Apify
 builder.Services.AddScoped<IScanner, XApifyScannerService>();
