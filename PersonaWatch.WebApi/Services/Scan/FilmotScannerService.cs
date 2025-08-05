@@ -1,11 +1,12 @@
 ﻿using PersonaWatch.WebApi.Entities;
+using PersonaWatch.WebApi.Entities.Services.Filmot;
+using PersonaWatch.WebApi.Helpers;
 using PersonaWatch.WebApi.Services.Interfaces;
 using System.Net.Http;
-using System.Text.Json;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Security.Cryptography;
-using PersonaWatch.WebApi.Entities.Services.Filmot;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 public class FilmotScannerService : IScanner
 {
@@ -70,8 +71,8 @@ public class FilmotScannerService : IScanner
                 var fullText = $"{hit.CtxBefore?.Trim()} {hit.Token?.Trim()} {hit.CtxAfter?.Trim()}".Trim();
                 var urlWithTimestamp = $"https://www.youtube.com/watch?v={video.Vid}&t={(int)hit.Start}s";
                 var baseUrl = $"https://www.youtube.com/watch?v={video.Vid}";
-                var normalizedUrl = NormalizeUrl(baseUrl);
-                var contentHash = ComputeMd5((hit.Token ?? "") + normalizedUrl);
+                var normalizedUrl = HelperService.NormalizeUrl(baseUrl);
+                var contentHash = HelperService.ComputeMd5((hit.Token ?? "") + normalizedUrl);
 
                 results.Add(new NewsContent
                 {
@@ -92,36 +93,5 @@ public class FilmotScannerService : IScanner
         }
 
         return results;
-    }
-
-    private static string NormalizeUrl(string url)
-    {
-        if (string.IsNullOrEmpty(url)) return "";
-
-        try
-        {
-            var uri = new UriBuilder(url)
-            {
-                Scheme = "https",
-                Port = -1
-            };
-
-            var host = uri.Host.Replace("www.", "").Replace("m.", "");
-            uri.Host = host;
-
-            return uri.Uri.AbsoluteUri.TrimEnd('/');
-        }
-        catch
-        {
-            return url;
-        }
-    }
-
-    private static string ComputeMd5(string input)
-    {
-        using var md5 = MD5.Create();
-        var inputBytes = Encoding.UTF8.GetBytes(input.ToLowerInvariant().Trim());
-        var hashBytes = md5.ComputeHash(inputBytes);
-        return Convert.ToHexString(hashBytes);
     }
 }

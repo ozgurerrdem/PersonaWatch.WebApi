@@ -41,14 +41,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<ScanService>();
 builder.Services.AddHttpClient<ApifyService>();
+builder.Services.AddHttpClient<EksiScannerService>();
 builder.Services.AddHttpClient();
 
-//builder.Services.AddScoped<IScanner, SerpApiScannerService>();
-//builder.Services.AddScoped<IScanner, YouTubeScannerService>();
-//builder.Services.AddScoped<IScanner, FilmotScannerService>();
-//builder.Services.AddScoped<IScanner, XApifyScannerService>();
-//builder.Services.AddScoped<IScanner, InstagramApifyScannerService>();
-//builder.Services.AddScoped<IScanner, FacebookApifyScannerService>();
+builder.Services.AddScoped<IScanner, SerpApiScannerService>();
+builder.Services.AddScoped<IScanner, YouTubeScannerService>();
+builder.Services.AddScoped<IScanner, FilmotScannerService>();
+builder.Services.AddScoped<IScanner, EksiScannerService>();
+
+//Apify
+builder.Services.AddScoped<IScanner, XApifyScannerService>();
+builder.Services.AddScoped<IScanner, InstagramApifyScannerService>();
+builder.Services.AddScoped<IScanner, FacebookApifyScannerService>();
 builder.Services.AddScoped<IScanner, TiktokApifyScannerService>();
 
 

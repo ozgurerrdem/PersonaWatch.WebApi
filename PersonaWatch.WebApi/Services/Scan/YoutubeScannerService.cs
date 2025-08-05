@@ -1,4 +1,5 @@
-﻿using PersonaWatch.WebApi.Services.Interfaces;
+﻿using PersonaWatch.WebApi.Helpers;
+using PersonaWatch.WebApi.Services.Interfaces;
 using System.Text.Json;
 
 public class YouTubeScannerService : IScanner
@@ -40,7 +41,7 @@ public class YouTubeScannerService : IScanner
             {
                 Id = Guid.NewGuid(),
                 Title = title,
-                Summary = description,
+                Summary = description ?? string.Empty,
                 Url = $"https://www.youtube.com/watch?v={videoId}",
                 Platform = "YouTube",
                 PublishDate = publishedAt,
@@ -48,19 +49,11 @@ public class YouTubeScannerService : IScanner
                 CreatedUserName = "system",
                 RecordStatus = 'A',
                 PersonName = personName,
-                ContentHash = ComputeMd5(title + videoId),
+                ContentHash = HelperService.ComputeMd5(title + videoId),
                 Source = Source
             });
         }
 
         return results;
-    }
-
-    private static string ComputeMd5(string input)
-    {
-        using var md5 = System.Security.Cryptography.MD5.Create();
-        var bytes = System.Text.Encoding.UTF8.GetBytes(input.ToLowerInvariant().Trim());
-        var hash = md5.ComputeHash(bytes);
-        return Convert.ToHexString(hash);
     }
 }

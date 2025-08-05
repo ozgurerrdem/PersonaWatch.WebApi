@@ -1,7 +1,6 @@
-﻿using PersonaWatch.WebApi.Services;
+﻿using PersonaWatch.WebApi.Helpers;
+using PersonaWatch.WebApi.Services;
 using PersonaWatch.WebApi.Services.Interfaces;
-using System.Security.Cryptography;
-using System.Text;
 
 public class FacebookApifyScannerService : IScanner
 {
@@ -49,15 +48,15 @@ public class FacebookApifyScannerService : IScanner
                 {
                     Id = Guid.NewGuid(),
                     Title = p.PageName ?? "Facebook Gönderisi",
-                    Summary = p.Text,
-                    Url = p.Url,
+                    Summary = p.Text ?? string.Empty,
+                    Url = p.Url ?? string.Empty,
                     Platform = "Facebook",
                     PublishDate = ConvertFromUnix(p.Timestamp),
                     CreatedDate = DateTime.UtcNow,
                     CreatedUserName = "system",
                     RecordStatus = 'A',
                     PersonName = personName,
-                    ContentHash = ComputeMd5(p.Text + NormalizeUrl(p.Url)),
+                    ContentHash = HelperService.ComputeMd5(p.Text + HelperService.NormalizeUrl(p.Url ?? string.Empty)),
                     Source = Source
                 })
         );
@@ -70,36 +69,5 @@ public class FacebookApifyScannerService : IScanner
         return timestamp.HasValue && timestamp > 0
             ? DateTimeOffset.FromUnixTimeSeconds(timestamp.Value).UtcDateTime
             : DateTime.UtcNow;
-    }
-
-    private static string NormalizeUrl(string url)
-    {
-        if (string.IsNullOrEmpty(url)) return "";
-
-        try
-        {
-            var uri = new UriBuilder(url)
-            {
-                Scheme = "https",
-                Port = -1
-            };
-
-            var host = uri.Host.Replace("www.", "").Replace("m.", "");
-            uri.Host = host;
-
-            return uri.Uri.AbsoluteUri.TrimEnd('/');
-        }
-        catch
-        {
-            return url;
-        }
-    }
-
-    private static string ComputeMd5(string input)
-    {
-        using var md5 = MD5.Create();
-        var inputBytes = Encoding.UTF8.GetBytes(input.ToLowerInvariant().Trim());
-        var hashBytes = md5.ComputeHash(inputBytes);
-        return Convert.ToHexString(hashBytes);
     }
 }

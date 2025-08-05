@@ -1,4 +1,5 @@
-﻿using PersonaWatch.WebApi.Services;
+﻿using PersonaWatch.WebApi.Helpers;
+using PersonaWatch.WebApi.Services;
 using PersonaWatch.WebApi.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,7 +22,7 @@ public class TiktokApifyScannerService : IScanner
         var input = new
         {
             excludePinnedPosts = false,
-            hashtags = new[] { personName },
+            hashtags = new[] { $"\"{personName}\"" },
             proxyCountryCode = "None",
             resultsPerPage = 100,
             scrapeRelatedVideos = false,
@@ -36,7 +37,6 @@ public class TiktokApifyScannerService : IScanner
             searchSection = string.Empty,
             maxProfilesPerQuery = 10
         };
-
 
         var runId = await _apifyService.StartActorRawAsync(actorId, input);
 
@@ -63,15 +63,15 @@ public class TiktokApifyScannerService : IScanner
                 {
                     Id = Guid.NewGuid(),
                     Title = p.AuthorMeta?.Name ?? "TikTok Gönderisi",
-                    Summary = p.Text,
-                    Url = NormalizeUrl(p.WebVideoUrl),
+                    Summary = p.Text ?? string.Empty,
+                    Url = HelperService.NormalizeUrl(p.WebVideoUrl ?? string.Empty),
                     Platform = "TikTok",
                     PublishDate = ConvertToUtc(p.CreateTimeISO),
                     CreatedDate = DateTime.UtcNow,
                     CreatedUserName = "system",
                     RecordStatus = 'A',
                     PersonName = personName,
-                    ContentHash = ComputeMd5(p.Text + NormalizeUrl(p.WebVideoUrl)),
+                    ContentHash = HelperService.ComputeMd5(p.Text + HelperService.NormalizeUrl(p.WebVideoUrl ?? string.Empty)),
                     Source = Source
                 })
         );
@@ -85,36 +85,5 @@ public class TiktokApifyScannerService : IScanner
             return dt.ToUniversalTime();
 
         return DateTime.UtcNow;
-    }
-
-    private static string NormalizeUrl(string url)
-    {
-        if (string.IsNullOrEmpty(url)) return "";
-
-        try
-        {
-            var uri = new UriBuilder(url)
-            {
-                Scheme = "https",
-                Port = -1
-            };
-
-            var host = uri.Host.Replace("www.", "").Replace("m.", "");
-            uri.Host = host;
-
-            return uri.Uri.AbsoluteUri.TrimEnd('/');
-        }
-        catch
-        {
-            return url;
-        }
-    }
-
-    private static string ComputeMd5(string input)
-    {
-        using var md5 = MD5.Create();
-        var inputBytes = Encoding.UTF8.GetBytes(input.ToLowerInvariant().Trim());
-        var hashBytes = md5.ComputeHash(inputBytes);
-        return Convert.ToHexString(hashBytes);
     }
 }

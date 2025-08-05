@@ -48,7 +48,8 @@ namespace PersonaWatch.WebApi.Controllers
                     content = n.Summary,
                     link = n.Url,
                     platform = n.Platform,
-                    publishDate = n.PublishDate
+                    publishDate = n.PublishDate,
+                    Source = n.Source ?? string.Empty
                 })
                 .ToListAsync();
 
