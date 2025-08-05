@@ -15,12 +15,12 @@ public class ScanController : ControllerBase
 
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> Scan(string personName)
+    public async Task<IActionResult> Scan(string searchKeyword)
     {
-        if (string.IsNullOrEmpty(personName))
-            return BadRequest("Missing personName parameter");
+        if (string.IsNullOrEmpty(searchKeyword))
+            return BadRequest("Missing searchKeyword parameter");
 
-        var newContents = await _scanService.ScanAsync(personName);
+        var newContents = await _scanService.ScanAsync(searchKeyword);
 
         return Ok(newContents);
     }

@@ -12,14 +12,14 @@ public class FacebookApifyScannerService : IScanner
         _apifyService = apifyService;
     }
 
-    public async Task<List<NewsContent>> ScanAsync(string personName)
+    public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var results = new List<NewsContent>();
         var actorId = "4YfcIWyRtJHJ5Ha3a";
 
         var input = new
         {
-            searchQuery = personName,
+            searchQuery = searchKeyword,
             maxPosts = 10
         };
 
@@ -55,7 +55,7 @@ public class FacebookApifyScannerService : IScanner
                     CreatedDate = DateTime.UtcNow,
                     CreatedUserName = "system",
                     RecordStatus = 'A',
-                    PersonName = personName,
+                    SearchKeyword = searchKeyword,
                     ContentHash = HelperService.ComputeMd5(p.Text + HelperService.NormalizeUrl(p.Url ?? string.Empty)),
                     Source = Source
                 })

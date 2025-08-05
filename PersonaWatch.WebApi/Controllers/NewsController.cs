@@ -27,7 +27,7 @@ namespace PersonaWatch.WebApi.Controllers
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(n => n.PersonName == search);
+                query = query.Where(n => n.SearchKeyword == search);
             }
 
             if (dateFrom.HasValue)

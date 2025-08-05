@@ -15,11 +15,11 @@ public class XApifyScannerService : IScanner
         _apifyService = apifyService;
     }
 
-    public async Task<List<NewsContent>> ScanAsync(string personName)
+    public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var input = new
         {
-            searchTerms = new[] { personName },
+            searchTerms = new[] { searchKeyword },
             maxItems = 50,
             sort = "Latest"
         };
@@ -58,7 +58,7 @@ public class XApifyScannerService : IScanner
                 CreatedDate = DateTime.UtcNow,
                 CreatedUserName = "system",
                 RecordStatus = 'A',
-                PersonName = personName,
+                SearchKeyword = searchKeyword,
                 ContentHash = HelperService.ComputeMd5(t.Text + HelperService.NormalizeUrl(t.Url ?? string.Empty)),
                 Source = Source
             })

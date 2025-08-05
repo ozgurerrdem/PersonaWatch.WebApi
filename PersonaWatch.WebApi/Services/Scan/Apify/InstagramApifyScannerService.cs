@@ -12,7 +12,7 @@ public class InstagramApifyScannerService : IScanner
         _apifyService = apifyService;
     }
 
-    public async Task<List<NewsContent>> ScanAsync(string personName)
+    public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var results = new List<NewsContent>();
         var actorId = "reGe1ST3OBgYZSsZJ";
@@ -22,7 +22,7 @@ public class InstagramApifyScannerService : IScanner
         {
             var input = new
             {
-                hashtags = new[] { personName.Replace(" ", "").ToLowerInvariant() },
+                hashtags = new[] { searchKeyword.Replace(" ", "").ToLowerInvariant() },
                 resultsLimit = 20,
                 resultsType = type
             };
@@ -59,7 +59,7 @@ public class InstagramApifyScannerService : IScanner
                         CreatedDate = DateTime.UtcNow,
                         CreatedUserName = "system",
                         RecordStatus = 'A',
-                        PersonName = personName,
+                        SearchKeyword = searchKeyword,
                         ContentHash = HelperService.ComputeMd5(p.Caption + HelperService.NormalizeUrl(p.Url ?? string.Empty)),
                         Source = Source
                     })

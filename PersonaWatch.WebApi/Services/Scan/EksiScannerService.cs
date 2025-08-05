@@ -13,13 +13,13 @@ public class EksiScannerService : IScanner
     private readonly string _cookie = "\r\nASP.NET_SessionId=cl5etmyliwtxsogbtvbdkd2p; channel-filter-preference-cookie=W3siSWQiOjEsIlByZWYiOnRydWV9LHsiSWQiOjIsIlByZWYiOnRydWV9LHsiSWQiOjQsIlByZWYiOnRydWV9LHsiSWQiOjUsIlByZWYiOnRydWV9LHsiSWQiOjEwLCJQcmVmIjpmYWxzZX0seyJJZCI6MTEsIlByZWYiOmZhbHNlfV0=; iq=3449a42f97c44e9fba4834bd6447367f"; // Postman'dan güncel olanı buraya yaz!
     private readonly string _userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-    public async Task<List<NewsContent>> ScanAsync(string personName)
+    public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var results = new List<NewsContent>();
-        if (string.IsNullOrWhiteSpace(personName))
+        if (string.IsNullOrWhiteSpace(searchKeyword))
             return results;
 
-        var cleaned = Regex.Replace(personName.Trim(), @"\s+", "+");
+        var cleaned = Regex.Replace(searchKeyword.Trim(), @"\s+", "+");
         var searchUrl = $"https://eksisozluk.com/?q={cleaned}";
 
         var options = new ChromeOptions();
@@ -123,7 +123,7 @@ public class EksiScannerService : IScanner
                         CreatedDate = DateTime.UtcNow,
                         CreatedUserName = "system",
                         RecordStatus = 'A',
-                        PersonName = personName,
+                        SearchKeyword = searchKeyword,
                         ContentHash = contentHash,
                         Source = Source
                     });

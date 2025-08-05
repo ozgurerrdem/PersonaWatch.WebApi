@@ -17,11 +17,11 @@ public class SerpApiScannerService : IScanner
         _serpApiKey = configuration["SerpApi:ApiKey"] ?? throw new ArgumentNullException("SerpApi:ApiKey is missing");
     }
 
-    public async Task<List<NewsContent>> ScanAsync(string personName)
+    public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var engines = new[] { "google", "google_news", "google_videos" };
 
-        var tasks = engines.Select(engine => ScanEngineAsync(engine, personName)).ToArray();
+        var tasks = engines.Select(engine => ScanEngineAsync(engine, searchKeyword)).ToArray();
 
         var allResults = (await Task.WhenAll(tasks))
             .SelectMany(result => result)
@@ -30,12 +30,12 @@ public class SerpApiScannerService : IScanner
         return allResults;
     }
 
-    private async Task<List<NewsContent>> ScanEngineAsync(string engine, string personName)
+    private async Task<List<NewsContent>> ScanEngineAsync(string engine, string searchKeyword)
     {
         var results = new List<NewsContent>();
         var client = _httpClientFactory.CreateClient();
 
-        var quotedQuery = $"\"{personName}\"";
+        var quotedQuery = $"\"{searchKeyword}\"";
         var searchUrl = $"https://serpapi.com/search.json?engine={engine}&q={Uri.EscapeDataString(quotedQuery)}&hl=tr&gl=tr&num=100&api_key={_serpApiKey}";
 
         var response = await client.GetStringAsync(searchUrl);
@@ -88,7 +88,7 @@ public class SerpApiScannerService : IScanner
                     CreatedDate = DateTime.UtcNow,
                     CreatedUserName = "system",
                     RecordStatus = 'A',
-                    PersonName = personName,
+                    SearchKeyword = searchKeyword,
                     ContentHash = contentHash,
                     Source = Source
                 });

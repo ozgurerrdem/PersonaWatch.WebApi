@@ -19,14 +19,14 @@ public class FilmotScannerService : IScanner
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<List<NewsContent>> ScanAsync(string personName)
+    public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var results = new List<NewsContent>();
 
-        if (string.IsNullOrWhiteSpace(personName))
+        if (string.IsNullOrWhiteSpace(searchKeyword))
             return results;
 
-        var encoded = Uri.EscapeDataString(Regex.Replace(personName.Trim(), @"\s+", "+"));
+        var encoded = Uri.EscapeDataString(Regex.Replace(searchKeyword.Trim(), @"\s+", "+"));
 
         var url = $"https://filmot.com/search/%22{encoded}%22/1?sortField=uploaddate&sortOrder=desc&gridView=1&";
 
@@ -85,7 +85,7 @@ public class FilmotScannerService : IScanner
                     CreatedDate = DateTime.UtcNow,
                     CreatedUserName = "system",
                     RecordStatus = 'A',
-                    PersonName = personName,
+                    SearchKeyword = searchKeyword,
                     ContentHash = contentHash,
                     Source = Source
                 });

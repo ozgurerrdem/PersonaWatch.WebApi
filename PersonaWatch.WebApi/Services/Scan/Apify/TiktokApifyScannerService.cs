@@ -14,7 +14,7 @@ public class TiktokApifyScannerService : IScanner
         _apifyService = apifyService;
     }
 
-    public async Task<List<NewsContent>> ScanAsync(string personName)
+    public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var results = new List<NewsContent>();
         var actorId = "GdWCkxBtKWOsKjdch";
@@ -22,7 +22,7 @@ public class TiktokApifyScannerService : IScanner
         var input = new
         {
             excludePinnedPosts = false,
-            hashtags = new[] { $"\"{personName}\"" },
+            hashtags = new[] { $"\"{searchKeyword}\"" },
             proxyCountryCode = "None",
             resultsPerPage = 100,
             scrapeRelatedVideos = false,
@@ -70,7 +70,7 @@ public class TiktokApifyScannerService : IScanner
                     CreatedDate = DateTime.UtcNow,
                     CreatedUserName = "system",
                     RecordStatus = 'A',
-                    PersonName = personName,
+                    SearchKeyword = searchKeyword,
                     ContentHash = HelperService.ComputeMd5(p.Text + HelperService.NormalizeUrl(p.WebVideoUrl ?? string.Empty)),
                     Source = Source
                 })

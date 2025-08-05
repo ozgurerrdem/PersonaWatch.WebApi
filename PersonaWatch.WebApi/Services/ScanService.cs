@@ -13,7 +13,7 @@ public class ScanService
         _scanners = scanners;
     }
 
-    public async Task<List<NewsContent>> ScanAsync(string personName)
+    public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var allNewContents = new List<NewsContent>();
 
@@ -26,7 +26,7 @@ public class ScanService
 
         foreach (var scanner in _scanners)
         {
-            var contents = await scanner.ScanAsync(personName);
+            var contents = await scanner.ScanAsync(searchKeyword);
 
             foreach (var item in contents)
             {

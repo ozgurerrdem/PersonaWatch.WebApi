@@ -4,7 +4,7 @@ namespace PersonaWatch.WebApi.Services.Interfaces
 {
     public interface IScanner
     {
-        Task<List<NewsContent>> ScanAsync(string personName);
+        Task<List<NewsContent>> ScanAsync(string searchKeyword);
         string Source { get; }
     }
 }
