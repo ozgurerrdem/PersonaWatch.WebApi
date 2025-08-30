@@ -20,7 +20,7 @@ public class YouTubeScannerService : IScanner
         var results = new List<NewsContent>();
         var client = _httpClientFactory.CreateClient();
 
-        var publishedAfter = DateTime.UtcNow.Date.ToString("yyyy-MM-dd") + "T00:00:00Z";
+        var publishedAfter = DateTime.UtcNow.Date.AddDays(-7).ToString("yyyy-MM-dd") + "T00:00:00Z";
         var searchUrl = $"https://www.googleapis.com/youtube/v3/search?part=snippet&q={Uri.EscapeDataString(searchKeyword)}&type=video&maxResults=50&order=date&publishedAfter={publishedAfter}&key={_apiKey}";
 
         var searchResponse = await client.GetStringAsync(searchUrl);

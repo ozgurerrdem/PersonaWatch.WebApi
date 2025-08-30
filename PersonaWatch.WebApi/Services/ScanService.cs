@@ -16,6 +16,7 @@ public class ScanService
     public async Task<List<NewsContent>> ScanAsync(string searchKeyword)
     {
         var allNewContents = new List<NewsContent>();
+        var exceptions = new List<Exception>();
 
         var existingHashes = new HashSet<string>(
             await _context.NewsContents
@@ -26,15 +27,22 @@ public class ScanService
 
         foreach (var scanner in _scanners)
         {
-            var contents = await scanner.ScanAsync(searchKeyword);
-
-            foreach (var item in contents)
+            try
             {
-                if (!existingHashes.Contains(item.ContentHash))
+                var contents = await scanner.ScanAsync(searchKeyword);
+
+                foreach (var item in contents)
                 {
-                    existingHashes.Add(item.ContentHash);
-                    allNewContents.Add(item);
+                    if (!existingHashes.Contains(item.ContentHash))
+                    {
+                        existingHashes.Add(item.ContentHash);
+                        allNewContents.Add(item);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                exceptions.Add(new Exception($"{scanner.GetType().Name} hata verdi: {ex.Message}", ex));
             }
         }
 
@@ -44,11 +52,11 @@ public class ScanService
             await _context.SaveChangesAsync();
         }
 
-        return allNewContents.OrderByDescending(x => x.PublishDate).ToList();
-    }
+        if (exceptions.Any())
+        {
+            throw new AggregateException("Bazı scannerlar başarısız oldu", exceptions);
+        }
 
-    public IEnumerable<IScanner> GetScanners()
-    {
-        return _scanners;
+        return allNewContents.OrderByDescending(x => x.PublishDate).ToList();
     }
 }

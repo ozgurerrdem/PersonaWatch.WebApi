@@ -19,8 +19,8 @@ public class XApifyScannerService : IScanner
     {
         var input = new
         {
-            searchTerms = new[] { searchKeyword },
             maxItems = 50,
+            searchTerms = new[] { $"\"{searchKeyword}\"" },
             sort = "Latest"
         };
 
