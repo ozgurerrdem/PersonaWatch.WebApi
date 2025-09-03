@@ -6,6 +6,7 @@ namespace PersonaWatch.WebApi.Data
     public class AppDbContext : DbContext
     {
         public DbSet<User> Users => Set<User>();
+        public DbSet<NewsContent> NewsContents => Set<NewsContent>();
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 

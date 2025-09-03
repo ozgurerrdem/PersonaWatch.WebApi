@@ -1,12 +1,26 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using PersonaWatch.WebApi.Data;
+using PersonaWatch.WebApi.Services;
+using PersonaWatch.WebApi.Services.Interfaces;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var allowedOrigin = builder.Configuration["Cors:FrontendOrigin"];
 
 // Add services to the container.
-builder.Services.AddControllers();
+//builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    var policy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+    //options.Filters.Add(new AuthorizeFilter(policy));
+});
+
+builder.Services.AddScoped<TokenService>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -24,6 +38,39 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+builder.Services.AddScoped<ScanService>();
+builder.Services.AddHttpClient<ApifyService>();
+builder.Services.AddHttpClient<EksiScannerService>();
+builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<IScanner, SerpApiScannerService>();
+builder.Services.AddScoped<IScanner, YouTubeScannerService>();
+builder.Services.AddScoped<IScanner, FilmotScannerService>();
+builder.Services.AddScoped<IScanner, EksiScannerService>();
+builder.Services.AddScoped<IScanner, SikayetvarScannerService>();
+
+//Apify
+builder.Services.AddScoped<IScanner, XApifyScannerService>();
+builder.Services.AddScoped<IScanner, InstagramApifyScannerService>();
+builder.Services.AddScoped<IScanner, FacebookApifyScannerService>();
+builder.Services.AddScoped<IScanner, TiktokApifyScannerService>();
+
+
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
+        };
+    });
 
 var app = builder.Build();
 
