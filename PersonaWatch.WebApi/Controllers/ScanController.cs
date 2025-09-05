@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PersonaWatch.WebApi.Services.Interfaces;
 
 [ApiController]
 [Route("[controller]")]
@@ -15,13 +14,41 @@ public class ScanController : ControllerBase
 
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> Scan(string searchKeyword)
+    public async Task<IActionResult> Scan(ScannerRequest request)
     {
-        if (string.IsNullOrEmpty(searchKeyword))
+        if (string.IsNullOrEmpty(request.SearchKeyword))
             return BadRequest("Missing searchKeyword parameter");
+        if (request.ScannerRunCriteria == null || !request.ScannerRunCriteria.Any())
+            return BadRequest("Missing scanners parameter");
 
-        var newContents = await _scanService.ScanAsync(searchKeyword);
+        var response = new ScannerResponse();
 
-        return Ok(newContents);
+        try
+        {
+            response = await _scanService.ScanAsync(request);
+        }
+        catch (Exception)
+        {
+            return StatusCode(500, "An error occurred while processing the scan request.");
+        }
+        return Ok(response);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("scanners")]
+    public IActionResult GetScanners()
+    {
+        try
+        {
+            var scanners = _scanService.GetScanners();
+            if (scanners == null || !scanners.Any())
+                return NotFound("No scanners available.");
+
+            return Ok(scanners);
+        }
+        catch (System.Exception)
+        {
+            return StatusCode(500, "An error occurred while retrieving the scanners.");
+        }
     }
 }
