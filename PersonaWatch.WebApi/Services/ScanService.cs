@@ -17,7 +17,7 @@ public class ScanService
     public async Task<ScannerResponse> ScanAsync(ScannerRequest request)
     {
         var allNewContents = new List<NewsContent>();
-        var exceptions = new List<Exception>();
+        var exceptions = new List<ScannerExceptions>();
 
         var existingHashes = new HashSet<string>(
             await _context.NewsContents
@@ -26,11 +26,11 @@ public class ScanService
                 .ToListAsync(),
             StringComparer.OrdinalIgnoreCase);
 
-        foreach (var scanner in _scanners.Where(scanner => request.ScannerRunCriteria.Contains(scanner.GetType().Name)))
+        foreach (var scanner in _scanners.Where(scanner => request.ScannerRunCriteria?.Contains(scanner.GetType().Name) == true))
         {
             try
             {
-                var contents = await scanner.ScanAsync(request.SearchKeyword);
+                var contents = await scanner.ScanAsync(request.SearchKeyword ?? string.Empty);
 
                 foreach (var item in contents)
                 {
@@ -43,7 +43,11 @@ public class ScanService
             }
             catch (Exception ex)
             {
-                exceptions.Add(new Exception($"{scanner.GetType().Name} hata verdi: {ex.Message}", ex));
+                exceptions.Add(new ScannerExceptions
+                {
+                    ScannerName = scanner.GetType().Name,
+                    ErrorMessage = ex.Message
+                });
             }
         }
 
@@ -51,11 +55,6 @@ public class ScanService
         {
             _context.NewsContents.AddRange(allNewContents);
             await _context.SaveChangesAsync();
-        }
-
-        if (exceptions.Any())
-        {
-            throw new AggregateException("Bazı scannerlar başarısız oldu", exceptions);
         }
 
         return new ScannerResponse {

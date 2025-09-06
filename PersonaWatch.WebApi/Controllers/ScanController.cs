@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
-[Route("[controller]")]
+[Route("api/[controller]")]
 public class ScanController : ControllerBase
 {
     private readonly ScanService _scanService;
@@ -13,7 +13,7 @@ public class ScanController : ControllerBase
     }
 
     [AllowAnonymous]
-    [HttpGet]
+    [HttpPost]
     public async Task<IActionResult> Scan(ScannerRequest request)
     {
         if (string.IsNullOrEmpty(request.SearchKeyword))
@@ -21,16 +21,8 @@ public class ScanController : ControllerBase
         if (request.ScannerRunCriteria == null || !request.ScannerRunCriteria.Any())
             return BadRequest("Missing scanners parameter");
 
-        var response = new ScannerResponse();
-
-        try
-        {
-            response = await _scanService.ScanAsync(request);
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, "An error occurred while processing the scan request.");
-        }
+        var response = await _scanService.ScanAsync(request);
+        
         return Ok(response);
     }
 
