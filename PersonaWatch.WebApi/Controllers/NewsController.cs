@@ -55,5 +55,29 @@ namespace PersonaWatch.WebApi.Controllers
 
             return Ok(newsList);
         }
+
+        [HttpGet("search-keywords")]
+        public async Task<IActionResult> GetSearchKeywords()
+        {
+            try
+            {
+                var keywords = await _context.NewsContents
+                                            .AsNoTracking()
+                                            .Where(n => n.RecordStatus == 'A')
+                                            .Select(n => n.SearchKeyword)
+                                            .Distinct()
+                                            .OrderBy(k => k)
+                                            .ToListAsync();
+
+                if (keywords == null || !keywords.Any())
+                    return NotFound("No search keywords available.");
+
+                return Ok(keywords);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, "An error occurred while retrieving the search keywords.");
+            }
+        }
     }
 }
