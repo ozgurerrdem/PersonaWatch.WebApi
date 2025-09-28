@@ -1,7 +1,6 @@
 ﻿using PersonaWatch.WebApi.Helpers;
+using PersonaWatch.WebApi.Services.Helpers;
 using PersonaWatch.WebApi.Services.Interfaces;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 
 public class SerpApiScannerService : IScanner
@@ -39,7 +38,10 @@ public class SerpApiScannerService : IScanner
         var searchUrl = $"https://serpapi.com/search.json?engine={engine}&q={Uri.EscapeDataString(quotedQuery)}&hl=tr&gl=tr&num=100&api_key={_serpApiKey}";
 
         var response = await client.GetStringAsync(searchUrl);
-        var json = JsonDocument.Parse(response);
+        using var json = JsonDocument.Parse(response);
+
+        // Baz zamanı (UTC) alalım (relative timestamplar için)
+        var baseUtc = SerpApiHelperService.GetBaseTimeUtc(json.RootElement);
 
         var excludedSections = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -49,7 +51,8 @@ public class SerpApiScannerService : IScanner
             "ads",
             "inline_images",
             "menu_links",
-            "related_topics"
+            "related_topics",
+            "serpapi_pagination"
         };
 
         foreach (var property in json.RootElement.EnumerateObject())
@@ -64,10 +67,37 @@ public class SerpApiScannerService : IScanner
 
                 var summary = item.TryGetProperty("snippet", out var s) ? s.GetString() : "";
                 var url = item.TryGetProperty("link", out var l) ? l.GetString() : "";
-                var publishDate = item.TryGetProperty("date", out var d) && DateTime.TryParse(d.GetString(), out var parsedDate)
-                                ? parsedDate
-                                : DateTime.UtcNow;
 
+                // PublishDate: motor + içerik tipine göre normalize
+                DateTime? publishDate = null;
+
+                if (engine.Equals("google_news", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Örn: "02/04/2025, 08:00 AM, +0000 UTC"
+                    var dateStr = item.TryGetProperty("date", out var d) && d.ValueKind == JsonValueKind.String
+                        ? d.GetString()
+                        : null;
+                    publishDate = SerpApiHelperService.ParseGoogleNewsDate(dateStr);
+                }
+                else if (engine.Equals("google_videos", StringComparison.OrdinalIgnoreCase))
+                {
+                    publishDate = SerpApiHelperService.ParseGoogleVideosDate(item, baseUtc);
+
+                    // Bazı videolarda ayrıca "date" string'i olabilir; yedek olarak deneyelim
+                    if (!publishDate.HasValue && item.TryGetProperty("date", out var vd) && vd.ValueKind == JsonValueKind.String)
+                    {
+                        publishDate = SerpApiHelperService.ParseDateOrRelative(vd.GetString(), baseUtc);
+                    }
+                }
+                else // "google" (web/organic, vb.)
+                {
+                    publishDate = SerpApiHelperService.ParseGoogleOrganicDate(item, baseUtc);
+                }
+
+                // Fallback: hala yoksa şimdi-UTC
+                var finalPublishDate = publishDate ?? DateTime.MinValue;
+
+                // YouTube linkleri hariç tut
                 if (!string.IsNullOrEmpty(url) && url.Contains("youtube.com", StringComparison.OrdinalIgnoreCase))
                     continue;
 
@@ -83,8 +113,8 @@ public class SerpApiScannerService : IScanner
                     Title = title ?? string.Empty,
                     Summary = summary ?? string.Empty,
                     Url = url ?? string.Empty,
-                    Platform = property.Name,
-                    PublishDate = publishDate,
+                    Platform = property.Name,              // örn: "organic_results", "news_results", "video_results"
+                    PublishDate = finalPublishDate,        // normalize edilmiş UTC
                     CreatedDate = DateTime.UtcNow,
                     CreatedUserName = "system",
                     RecordStatus = 'A',
@@ -93,7 +123,6 @@ public class SerpApiScannerService : IScanner
                     Source = Source
                 });
             }
-
         }
 
         return results;
