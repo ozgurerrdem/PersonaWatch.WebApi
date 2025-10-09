@@ -14,4 +14,9 @@ public class NewsContent : BaseEntity
 
     public string ContentHash { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
+    public string Publisher { get; set; } = string.Empty;
+    public int ViewCount { get; set; }
+    public int LikeCount { get; set; }
+    public int DislikeCount { get; set; }
+    public int CommentCount { get; set; }
 }
