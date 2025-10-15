@@ -1,117 +1,26 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using PersonaWatch.WebApi.Data;
-using PersonaWatch.WebApi.Services;
-using PersonaWatch.WebApi.Services.Interfaces;
-using System.Text;
+﻿using PersonaWatch.WebApi.Extensions;
+using PersonaWatch.WebApi.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
-var allowedOrigin = builder.Configuration["Cors:FrontendOrigin"];
 
-// Add services to the container.
-//builder.Services.AddControllers();
-builder.Services.AddControllers(options =>
-{
-    var policy = new AuthorizationPolicyBuilder()
-        .RequireAuthenticatedUser()
-        .Build();
-    //options.Filters.Add(new AuthorizeFilter(policy));
-});
+// DI kümeleri
+builder.Services.AddPresentation(addGlobalAuthFilter: false);
+builder.Services.AddOpenApi();
+builder.Services.AddFrontendCors(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration);
 
-builder.Services.AddScoped<TokenService>();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins(allowedOrigin!)
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials();
-    });
-});
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
-
-builder.Services.AddScoped<ScanService>();
-builder.Services.AddHttpClient<ApifyService>();
-builder.Services.AddHttpClient<EksiScannerService>();
-builder.Services.AddHttpClient();
-
-builder.Services.AddScoped<IScanner, SerpApiScannerService>();
-builder.Services.AddScoped<IScanner, YouTubeScannerService>();
-builder.Services.AddScoped<IScanner, FilmotScannerService>();
-builder.Services.AddScoped<IScanner, EksiScannerService>();
-builder.Services.AddScoped<IScanner, SikayetvarScannerService>();
-
-builder.Services.AddScoped<IClipService, ClipService>();
-
-//Apify
-builder.Services.AddScoped<IScanner, XApifyScannerService>();
-builder.Services.AddScoped<IScanner, InstagramApifyScannerService>();
-builder.Services.AddScoped<IScanner, FacebookApifyScannerService>();
-builder.Services.AddScoped<IScanner, TiktokApifyScannerService>();
-
-
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
-        };
-    });
+// Opsiyonel: seed'i hosted service ile çalıştır
+builder.Services.AddHostedService<DatabaseSeederHostedService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
+// Pipeline
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
+app.UseOpenApiIfDev(app.Environment);
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-    if (!context.Users.Any(u => u.Username == "admin"))
-    {
-        var hasher = new PasswordHasher<User>();
-
-        var user = new User
-        {
-            Username = "admin",
-            FirstName = "Admin",
-            LastName = "Admin",
-            IsAdmin = true,
-            
-        };
-
-        user.Password = hasher.HashPassword(user, "admin");
-
-        context.Users.Add(user);
-        context.SaveChanges();
-    }
-}
 
 app.Run();
