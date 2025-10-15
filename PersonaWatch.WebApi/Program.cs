@@ -51,6 +51,8 @@ builder.Services.AddScoped<IScanner, FilmotScannerService>();
 builder.Services.AddScoped<IScanner, EksiScannerService>();
 builder.Services.AddScoped<IScanner, SikayetvarScannerService>();
 
+builder.Services.AddScoped<IClipService, ClipService>();
+
 //Apify
 builder.Services.AddScoped<IScanner, XApifyScannerService>();
 builder.Services.AddScoped<IScanner, InstagramApifyScannerService>();
