@@ -1,8 +1,8 @@
-﻿using PersonaWatch.WebApi.Helpers;
+﻿// PATH: WebApi/Services/XApifyScannerService.cs
+using PersonaWatch.WebApi.Helpers;
 using PersonaWatch.WebApi.Services;
 using PersonaWatch.WebApi.Services.Interfaces;
-using System.Security.Cryptography;
-using System.Text;
+using System.Globalization;
 
 public class XApifyScannerService : IScanner
 {
@@ -47,24 +47,66 @@ public class XApifyScannerService : IScanner
 
         var results = rawTweets
             .Where(t => !string.IsNullOrWhiteSpace(t.Text) && !string.IsNullOrWhiteSpace(t.Url))
-            .Select(t => new NewsContent
+            .Select(t =>
             {
-                Id = Guid.NewGuid(),
-                Title = t.Text!.Length > 100 ? t.Text.Substring(0, 100) : t.Text,
-                Summary = t.Text,
-                Url = t.Url ?? string.Empty,
-                Platform = "X",
-                PublishDate = ParseApifyDate(t.CreatedAt),
-                CreatedDate = DateTime.UtcNow,
-                CreatedUserName = "system",
-                RecordStatus = 'A',
-                SearchKeyword = searchKeyword,
-                ContentHash = HelperService.ComputeMd5(t.Text + HelperService.NormalizeUrl(t.Url ?? string.Empty)),
-                Source = Source
+                var url = t.Url ?? string.Empty;
+                var title = t.Text!.Length > 100 ? t.Text.Substring(0, 100) : t.Text;
+
+                return new NewsContent
+                {
+                    Id = Guid.NewGuid(),
+
+                    Title = title,
+                    Summary = t.Text ?? string.Empty,
+                    Url = url,
+
+                    Platform = "X",
+                    PublishDate = ParseApifyDate(t.CreatedAt),
+                    SearchKeyword = searchKeyword,
+
+                    ContentHash = HelperService.ComputeMd5((t.Text ?? string.Empty) + HelperService.NormalizeUrl(url)),
+                    Source = Source,
+                    Publisher = ExtractXHandleFromUrl(url),
+
+                    // ---- SAYIM ALANLARI ----
+                    LikeCount     = t.LikeCount     ?? 0,
+                    RtCount       = t.RetweetCount  ?? 0,
+                    QuoteCount    = t.QuoteCount    ?? 0,
+                    BookmarkCount = t.BookmarkCount ?? 0,
+                    // X API dislike & view vermiyor → 0
+                    DislikeCount  = 0,
+                    ViewCount     = 0,
+                    // Comment = sadece reply
+                    CommentCount  = t.ReplyCount    ?? 0,
+
+                    // BaseEntity
+                    CreatedDate = DateTime.UtcNow,
+                    CreatedUserName = "system",
+                    RecordStatus = 'A'
+                };
             })
             .ToList();
 
         return results;
+    }
+
+    private static string ExtractXHandleFromUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return string.Empty;
+        try
+        {
+            var u = new Uri(url);
+            // /{handle}/status/{id}
+            var segments = u.AbsolutePath.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 1)
+            {
+                var handle = segments[0];
+                if (!string.IsNullOrWhiteSpace(handle) && !string.Equals(handle, "status", StringComparison.OrdinalIgnoreCase))
+                    return handle;
+            }
+        }
+        catch { /* ignore */ }
+        return string.Empty;
     }
 
     private static DateTime ParseApifyDate(string? raw)
@@ -75,8 +117,8 @@ public class XApifyScannerService : IScanner
         if (DateTime.TryParseExact(
             raw,
             "ddd MMM dd HH:mm:ss K yyyy",
-            System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.AdjustToUniversal,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AdjustToUniversal,
             out var parsed))
         {
             return parsed;

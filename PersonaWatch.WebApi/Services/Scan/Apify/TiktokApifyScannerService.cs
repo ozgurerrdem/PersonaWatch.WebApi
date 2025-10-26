@@ -1,8 +1,7 @@
-﻿using PersonaWatch.WebApi.Helpers;
+﻿// PATH: WebApi/Services/TiktokApifyScannerService.cs
+using PersonaWatch.WebApi.Helpers;
 using PersonaWatch.WebApi.Services;
 using PersonaWatch.WebApi.Services.Interfaces;
-using System.Security.Cryptography;
-using System.Text;
 
 public class TiktokApifyScannerService : IScanner
 {
@@ -59,20 +58,45 @@ public class TiktokApifyScannerService : IScanner
         results.AddRange(
             rawItems
                 .Where(p => !string.IsNullOrWhiteSpace(p.Text) && !string.IsNullOrWhiteSpace(p.WebVideoUrl))
-                .Select(p => new NewsContent
+                .Select(p =>
                 {
-                    Id = Guid.NewGuid(),
-                    Title = p.AuthorMeta?.Name ?? "TikTok Gönderisi",
-                    Summary = p.Text ?? string.Empty,
-                    Url = HelperService.NormalizeUrl(p.WebVideoUrl ?? string.Empty),
-                    Platform = "TikTok",
-                    PublishDate = ConvertToUtc(p.CreateTimeISO),
-                    CreatedDate = DateTime.UtcNow,
-                    CreatedUserName = "system",
-                    RecordStatus = 'A',
-                    SearchKeyword = searchKeyword,
-                    ContentHash = HelperService.ComputeMd5(p.Text + HelperService.NormalizeUrl(p.WebVideoUrl ?? string.Empty)),
-                    Source = Source
+                    var url = HelperService.NormalizeUrl(p.WebVideoUrl ?? string.Empty);
+                    var title = (p.Text ?? string.Empty);
+                    title = title.Length > 100 ? title[..100] : title;
+                    if (string.IsNullOrWhiteSpace(title))
+                        title = p.AuthorMeta?.Name ?? p.AuthorNameFlat ?? "TikTok Gönderisi";
+
+                    return new NewsContent
+                    {
+                        Id = Guid.NewGuid(),
+
+                        Title = title,
+                        Summary = p.Text ?? string.Empty,
+                        Url = url,
+
+                        Platform = "TikTok",
+                        PublishDate = ConvertToUtc(p.CreateTimeISO),
+                        SearchKeyword = searchKeyword,
+
+                        ContentHash = HelperService.ComputeMd5((p.Text ?? string.Empty) + url),
+
+                        Source = Source,
+                        Publisher = p.AuthorMeta?.Name ?? p.AuthorNameFlat ?? string.Empty,
+
+                        // Sayaçlar
+                        LikeCount     = p.DiggCount    ?? 0,
+                        RtCount       = p.ShareCount   ?? 0,
+                        ViewCount     = p.PlayCount    ?? 0,
+                        CommentCount  = p.CommentCount ?? 0,
+                        BookmarkCount = p.CollectCount ?? 0,
+                        QuoteCount    = 0,
+                        DislikeCount  = 0,
+
+                        // BaseEntity
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedUserName = "system",
+                        RecordStatus = 'A'
+                    };
                 })
         );
 

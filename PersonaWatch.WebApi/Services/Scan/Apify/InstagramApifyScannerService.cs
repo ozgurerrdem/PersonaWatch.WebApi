@@ -1,4 +1,6 @@
-﻿using PersonaWatch.WebApi.Helpers;
+﻿// PATH: WebApi/Services/InstagramApifyScannerService.cs
+using PersonaWatch.WebApi.Entities;
+using PersonaWatch.WebApi.Helpers;
 using PersonaWatch.WebApi.Services;
 using PersonaWatch.WebApi.Services.Interfaces;
 
@@ -47,21 +49,49 @@ public class InstagramApifyScannerService : IScanner
 
             results.AddRange(
                 rawItems
-                    .Where(p => !string.IsNullOrWhiteSpace(p.Caption) && !string.IsNullOrWhiteSpace(p.Url))
-                    .Select(p => new NewsContent
+                    .Where(p => !string.IsNullOrWhiteSpace(p.Url) && (!string.IsNullOrWhiteSpace(p.Caption) || !string.IsNullOrWhiteSpace(p.OwnerUsername) || !string.IsNullOrWhiteSpace(p.OwnerFullName)))
+                    .Select(p =>
                     {
-                        Id = Guid.NewGuid(),
-                        Title = p.Caption!.Length > 100 ? p.Caption.Substring(0, 100) : p.Caption,
-                        Summary = p.Caption,
-                        Url = p.Url ?? string.Empty,
-                        Platform = "Instagram",
-                        PublishDate = ParseIsoDate(p.Timestamp),
-                        CreatedDate = DateTime.UtcNow,
-                        CreatedUserName = "system",
-                        RecordStatus = 'A',
-                        SearchKeyword = searchKeyword,
-                        ContentHash = HelperService.ComputeMd5(p.Caption + HelperService.NormalizeUrl(p.Url ?? string.Empty)),
-                        Source = Source
+                        var caption = p.Caption ?? string.Empty;
+                        var title = caption.Length > 100 ? caption.Substring(0, 100) : caption;
+                        if (string.IsNullOrWhiteSpace(title))
+                            title = p.OwnerUsername ?? p.OwnerFullName ?? "Instagram Gönderisi";
+
+                        var url = p.Url ?? string.Empty;
+
+                        return new NewsContent
+                        {
+                            Id = Guid.NewGuid(),
+
+                            Title = title,
+                            Summary = caption,
+                            Url = url,
+
+                            Platform = "Instagram",
+                            PublishDate = ParseIsoDate(p.Timestamp),
+                            SearchKeyword = searchKeyword,
+
+                            ContentHash = HelperService.ComputeMd5(
+                                (caption) + HelperService.NormalizeUrl(url)
+                            ),
+
+                            Source = Source,
+                            Publisher = p.OwnerUsername ?? p.OwnerFullName ?? string.Empty,
+
+                            // Sayaçlar
+                            LikeCount     = p.LikesCount    ?? 0,
+                            CommentCount  = p.CommentsCount ?? 0,
+                            RtCount       = 0,
+                            QuoteCount    = 0,
+                            BookmarkCount = 0,
+                            DislikeCount  = 0,
+                            ViewCount     = 0,
+
+                            // BaseEntity
+                            CreatedDate = DateTime.UtcNow,
+                            CreatedUserName = "system",
+                            RecordStatus = 'A'
+                        };
                     })
             );
         }

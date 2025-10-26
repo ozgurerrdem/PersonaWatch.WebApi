@@ -1,19 +1,27 @@
-﻿public class FacebookDto
+﻿// PATH: WebApi/Services/Dtos/FacebookDto.cs
+public class FacebookDto
 {
-    public string? FacebookUrl { get; set; }
+    // Kaynak & kimlikler
+    public string? FacebookUrl { get; set; }   // sayfa URL'si
     public string? PageId { get; set; }
     public string? PostId { get; set; }
     public string? PageName { get; set; }
-    public string? Url { get; set; }
-    public string? Time { get; set; }
-    public long? Timestamp { get; set; }
+
+    // Post URL'leri
+    public string? Url { get; set; }          // gönderi URL'si
+    public string? TopLevelUrl { get; set; }  // (bazı aktörlerde üst seviye link)
+    public string? Link { get; set; }         // ekli dış bağlantı
+    public string? Thumb { get; set; }        // thumbnail
+
+    // Zaman
+    public string? Time { get; set; }         // formatlı tarih/saat
+    public long? Timestamp { get; set; }      // Unix (saniye)
+
+    // İçerik
+    public string? Text { get; set; }
+
+    // Sayaçlar
     public int? Likes { get; set; }
     public int? Comments { get; set; }
-    public string? Shares { get; set; }
-    public string? Text { get; set; }
-    public string? Link { get; set; }
-    public string? Thumb { get; set; }
-    public string? TopLevelUrl { get; set; }
-    public string? FacebookId { get; set; }
-    public string? PostFacebookId { get; set; }
+    public int? Shares { get; set; }
 }

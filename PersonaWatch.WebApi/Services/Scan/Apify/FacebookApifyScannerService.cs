@@ -1,6 +1,9 @@
-﻿using PersonaWatch.WebApi.Helpers;
+﻿// PATH: WebApi/Services/FacebookApifyScannerService.cs
+using PersonaWatch.WebApi.Entities;
+using PersonaWatch.WebApi.Helpers;
 using PersonaWatch.WebApi.Services;
 using PersonaWatch.WebApi.Services.Interfaces;
+using System.Globalization;
 
 public class FacebookApifyScannerService : IScanner
 {
@@ -43,31 +46,70 @@ public class FacebookApifyScannerService : IScanner
 
         results.AddRange(
             rawItems
-                .Where(p => !string.IsNullOrWhiteSpace(p.Text) && !string.IsNullOrWhiteSpace(p.Url))
-                .Select(p => new NewsContent
+                .Where(p => !string.IsNullOrWhiteSpace(p.Text) && (!string.IsNullOrWhiteSpace(p.Url) || !string.IsNullOrWhiteSpace(p.TopLevelUrl) || !string.IsNullOrWhiteSpace(p.FacebookUrl)))
+                .Select(p =>
                 {
-                    Id = Guid.NewGuid(),
-                    Title = p.PageName ?? "Facebook Gönderisi",
-                    Summary = p.Text ?? string.Empty,
-                    Url = p.Url ?? string.Empty,
-                    Platform = "Facebook",
-                    PublishDate = ConvertFromUnix(p.Timestamp),
-                    CreatedDate = DateTime.UtcNow,
-                    CreatedUserName = "system",
-                    RecordStatus = 'A',
-                    SearchKeyword = searchKeyword,
-                    ContentHash = HelperService.ComputeMd5(p.Text + HelperService.NormalizeUrl(p.Url ?? string.Empty)),
-                    Source = Source
+                    var postUrl = p.Url
+                                  ?? p.TopLevelUrl
+                                  ?? p.FacebookUrl
+                                  ?? string.Empty;
+
+                    // Başlık: metnin ilk 100 karakteri
+                    var titleSource = p.Text ?? string.Empty;
+                    var title = titleSource.Length > 100 ? titleSource[..100] : titleSource;
+
+                    return new NewsContent
+                    {
+                        Id = Guid.NewGuid(),
+
+                        Title = string.IsNullOrWhiteSpace(title) ? (p.PageName ?? "Facebook Gönderisi") : title,
+                        Summary = p.Text ?? string.Empty,
+                        Url = postUrl,
+
+                        Platform = "Facebook",
+                        PublishDate = ConvertFromUnixOrTime(p.Timestamp, p.Time),
+                        SearchKeyword = searchKeyword,
+
+                        ContentHash = HelperService.ComputeMd5(
+                            (p.Text ?? string.Empty) + HelperService.NormalizeUrl(postUrl)
+                        ),
+
+                        Source = Source,
+                        Publisher = p.PageName ?? string.Empty,
+
+                        // ====== SAYIM ALANLARI ======
+                        LikeCount     = p.Likes    ?? 0,
+                        CommentCount  = p.Comments ?? 0,
+                        RtCount       = p.Shares   ?? 0,
+                        QuoteCount    = 0,
+                        BookmarkCount = 0,
+                        DislikeCount  = 0,
+                        ViewCount     = 0,
+
+                        // BaseEntity
+                        CreatedDate = DateTime.UtcNow,
+                        CreatedUserName = "system",
+                        RecordStatus = 'A'
+                    };
                 })
         );
 
         return results;
     }
 
-    private static DateTime ConvertFromUnix(long? timestamp)
+    private static DateTime ConvertFromUnixOrTime(long? timestamp, string? time)
     {
-        return timestamp.HasValue && timestamp > 0
-            ? DateTimeOffset.FromUnixTimeSeconds(timestamp.Value).UtcDateTime
-            : DateTime.UtcNow;
+        // Öncelik: Unix timestamp (saniye)
+        if (timestamp.HasValue && timestamp > 0)
+            return DateTimeOffset.FromUnixTimeSeconds(timestamp.Value).UtcDateTime;
+
+        // Alternatif: Formatlı tarih dizesi (APIfy "time" alanı)
+        if (!string.IsNullOrWhiteSpace(time) &&
+            DateTime.TryParse(time, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
+        {
+            return parsed;
+        }
+
+        return DateTime.UtcNow;
     }
 }
